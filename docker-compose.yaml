@@ -1,7 +1,7 @@
 services:
   web:
     build: .
-    command: gunicorn CORE.wsgi:application --bind 0.0.0.0:8000 --reload --workers 3
+    command: python manage.py runserver 0.0.0.0:8000
     restart: always
     volumes:
       - .:/app
@@ -17,6 +17,8 @@ services:
       - .env
     stdin_open: true
     tty: true
+    ports:
+    - "8000:8000"
     networks:
       - card_network
 

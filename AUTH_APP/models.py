@@ -1,7 +1,6 @@
 
 from django.db import models
 from UTILS.db_utils import BaseAbstractModel
-
 from UTILS.enums import EnvironmentType
 
 
@@ -19,7 +18,7 @@ class Organization(BaseAbstractModel):
     phone_number = models.CharField(max_length=20, unique=True)
     password = models.CharField(max_length=128)  # Hashed password
     def __str__(self):
-        return f"{self.first_name} {self.last_name} - {self.email}"
+        return f"{self.name}"
     
     
     
@@ -41,6 +40,7 @@ class APIToken(BaseAbstractModel):
     environment = models.CharField(max_length=50, choices=[(tag.value, tag.value) for tag in EnvironmentType])
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
+    key_id = models.CharField(max_length=32, unique=True)
     is_active = models.BooleanField(default=True)
     
     def __str__(self):
