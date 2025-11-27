@@ -18,29 +18,33 @@ class AuthService:
     def sign_up_organization(cls, data:dict):
         
         webhook_url = data.get("webhook_url")
-        secret = data.get("webhook_secret")
+        webhook_secret = data.get("webhook_secret")
         
         password = data.get("password")
         hashed_password = make_password(password)
+        email = data.get("email")
+        
+        if Organization.objects.filter(email=email).exists():
+            return False, "Organization already exist"
         
         organization = Organization.objects.create(
             name=data.get("name"),
             country=data.get("country"),
             industry=data.get("industry"),
-            email=data.get("email"),
+            email=email,
             phone_number=data.get("phone_number"),
             password=hashed_password,
             website=data.get("website")
         )
         
-        if webhook_url and secret:
+        if webhook_url and webhook_secret:
             WebhookSettings.objects.create(
                 webhook_url=webhook_url,
-                secret=secret,
+                secret=webhook_secret,
                 environment=EnvironmentType.SANDBOX.value
             )
         
-        return organization
+        return True, organization
     
     
     @classmethod
@@ -71,13 +75,12 @@ class AuthService:
     
     @classmethod
     def verify_api_key(cls, raw_key):
-        import pdb ; pdb.set_trace()
+
         """
         Verify raw key; return APIToken instance on success, else None.
         raw_key expected as: prefix_keyid_secret
         """
         try:
-            # split into three parts only (prefix, key_id, secret)
             prefix, key_id, secret = raw_key.split(":", 2)
         except Exception:
             return None

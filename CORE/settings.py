@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    # external app
+    'drf_yasg',
+    
+    # internal app
     "AUTH_APP",
 ]
 
