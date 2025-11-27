@@ -1,0 +1,94 @@
+services:
+  web:
+    build: .
+    command: gunicorn CORE.wsgi:application --bind 0.0.0.0:8000 --reload --workers 3
+    restart: always
+    volumes:
+      - .:/app
+    expose:
+      - "8000"
+    depends_on:
+      - db
+    environment:
+      - CELERY_BROKER=${CELERY_BROKER_URL}
+      - CELERY_BACKEND=${CELERY_BROKER_URL}
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASS}@db:5432/${POSTGRES_DB}
+    env_file:
+      - .env
+    stdin_open: true
+    tty: true
+    networks:
+      - card_network
+
+  db:
+    image: postgres:13
+    container_name: card_db
+    environment:
+    - POSTGRES_USER=${POSTGRES_USER}
+    - POSTGRES_PASSWORD=${POSTGRES_PASS}
+    - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+    networks:
+    - card_network
+    ports:
+      - "5433:5432"
+
+  redis:
+    image: redis:6.2
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - card_network
+
+  celery:
+    build: .
+    command: celery -A CORE.celery_app worker -l info
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    depends_on:
+      - web
+      - redis
+    networks:
+      - card_network
+
+  celery-beat:
+    build: .
+    command: celery -A CORE beat -l info
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=${SECRET_KEY}
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+    depends_on:
+      - redis
+      - web
+      - db
+    networks:
+      - card_network
+
+  mailhog:
+    image: mailhog/mailhog
+    logging:
+      driver: 'none'
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - card_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  card_network:
+    driver: bridge

@@ -1,0 +1,66 @@
+from django.db import models
+from UTILS.db_utils import BaseAbstractModel
+from enum import Enum
+
+# Create your models here.
+
+
+
+class WebhookEndpoint(BaseAbstractModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    url = models.URLField()
+    secret = models.CharField(max_length=255)  # For signing
+    is_active = models.BooleanField(default=True)
+
+
+
+class WebhookEvent(BaseAbstractModel):
+    event_id = models.CharField(max_length=64, unique=True)
+    event_type = models.CharField(max_length=255)
+    payload = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    delivered = models.BooleanField(default=False)
+    attempts = models.IntegerField(default=0)
+    
+    
+class WebhookDelivery(BaseAbstractModel):
+    event = models.ForeignKey(WebhookEvent, on_delete=models.CASCADE)
+    endpoint = models.ForeignKey(WebhookEndpoint, on_delete=models.CASCADE)
+    status_code = models.IntegerField(null=True)
+    response_body = models.TextField(null=True)
+    delivered_at = models.DateTimeField(auto_now_add=True)
+    success = models.BooleanField(default=False)
+    
+    
+    
+    
+
+class CardEventType(Enum):
+    CARD_CREATED = "card.created"
+    CARD_UPDATED = "card.updated"
+    CARD_DELETED = "card.deleted"
+    CARD_BLOCKED = "card.blocked"
+    CARD_UNBLOCKED = "card.unblocked"
+    
+
+class WalletEventType(Enum):
+    WALLET_FUNDED = "wallet.funded"
+    WALLET_DEBITED = "wallet.debited"
+    WALLET_CREATED = "wallet.created"
+    WALLET_CLOSED = "wallet.closed"
+    
+
+class TransactionEventType(Enum):
+    TRANSACTION_INITIATED = "transaction.debit"
+    TRANSACTION_COMPLETED = "transaction.credit"
+    TRANSACTION_FAILED = "transaction.reversed"
+    TRANSACTION_REFUNDED = "transaction.refund"
+    
+
+class UserEventType(Enum):
+    USER_REGISTERED = "user.registered"
+    USER_UPDATED = "user.updated"
+    USER_DEACTIVATED = "user.deactivated"
+    USER_REACTIVATED = "user.reactivated"
+    
+
