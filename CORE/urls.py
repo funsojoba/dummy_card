@@ -40,5 +40,6 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path('admin/', admin.site.urls),
-    path("api/v1/", include("AUTH_APP.urls"))
+    path("api/v1/", include("AUTH_APP.urls")),
+    path("api/v1/", include("CARDHOLDER_APP.urls")),
 ]

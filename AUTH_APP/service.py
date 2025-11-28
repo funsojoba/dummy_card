@@ -1,5 +1,6 @@
 import secrets
 from django.utils import timezone
+from django.db.models import Q
 from AUTH_APP.models import Organization, APIToken, WebhookSettings
 from UTILS.enums import EnvironmentType
 
@@ -15,7 +16,7 @@ access to production environment comes upon verification, is_verified=True, is_a
 
 class AuthService:
     @classmethod
-    def sign_up_organization(cls, data:dict):
+    def sign_up_organization(cls, data: dict):
         
         webhook_url = data.get("webhook_url")
         webhook_secret = data.get("webhook_secret")
@@ -24,7 +25,10 @@ class AuthService:
         hashed_password = make_password(password)
         email = data.get("email")
         
-        if Organization.objects.filter(email=email).exists():
+        if Organization.objects.filter(
+            Q(phone_number=data.get("phone_number"))
+            | Q(email=email)
+            ).exists():
             return False, "Organization already exist"
         
         organization = Organization.objects.create(
@@ -45,6 +49,27 @@ class AuthService:
             )
         
         return True, organization
+    
+    @classmethod
+    def log_in_organizagion(cls, data: dict):
+        email = data.get("email")
+        password = data.get("password")
+        
+        organization = Organization.objects.filter(email=email)
+        
+        if not organization.exists():
+            return False, "Invalid credentials"
+        
+        org_password = organization.first().password
+        
+        if not check_password(password=password, encoded=org_password):
+            return False, "Invalid credentials"
+        
+        token_data = {
+            "access": "random shit",
+            "refresh": "another random shit"
+        }
+        return True, token_data
     
     
     @classmethod
@@ -73,32 +98,4 @@ class AuthService:
         
         return api_key
     
-    @classmethod
-    def verify_api_key(cls, raw_key):
-
-        """
-        Verify raw key; return APIToken instance on success, else None.
-        raw_key expected as: prefix_keyid_secret
-        """
-        try:
-            prefix, key_id, secret = raw_key.split(":", 2)
-        except Exception:
-            return None
-
-        try:
-            token_obj = APIToken.objects.filter(key_id=key_id, is_active=True).first()
-            if not token_obj:
-                return None
-            
-            
-            computed_secret = f"{raw_key}:{token_obj.organization.id}"
-            
-            if not check_password(computed_secret, token_obj.token):
-                return None
-
-            if token_obj.expires_at < timezone.now():
-                return None
-            return token_obj
-        
-        except APIToken.DoesNotExist:
-            return None
+    

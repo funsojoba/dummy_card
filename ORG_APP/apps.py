@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class UserAppConfig(AppConfig):
+class OrgAppConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'USER_APP'
+    name = 'ORG_APP'

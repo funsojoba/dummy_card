@@ -3,13 +3,31 @@ from rest_framework import status
 from rest_framework.decorators import action
 from UTILS.response import Response
 
-from AUTH_APP.serializers import SignUpSerializer, OrganizationSerializer
+from AUTH_APP.serializers import SignUpSerializer, OrganizationSerializer, LogInSerializer
 from AUTH_APP.service import AuthService
 
 
 
 
 class AuthViewSet(ViewSet):
+    
+    @action(methods=["POST"], detail=False, url_path="log-in")
+    def login(self, request):
+        serializer = LogInSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        flag, login = AuthService.log_in_organizagion(serializer.validated_data)
+        
+        if not flag:
+            return Response(
+                errors={"message": login},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            data=login,
+            status=status.HTTP_200_OK
+        )
+        
     
     @action(methods=["POST"], detail=False, url_path="sign-up")
     def signup(self, request):
@@ -27,3 +45,5 @@ class AuthViewSet(ViewSet):
             data=OrganizationSerializer(signup).data,
             status=status.HTTP_201_CREATED
         )
+        
+    

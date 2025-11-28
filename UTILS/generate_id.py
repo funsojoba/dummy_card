@@ -1,7 +1,11 @@
 import uuid
 import bcrypt
 import string
+from django.utils import timezone
 import hmac, hashlib, base64
+
+from AUTH_APP.models import Organization, APIToken
+from django.contrib.auth.hashers import check_password
 
 
 
@@ -45,3 +49,34 @@ def verify_hashed_string(raw: str, hashed: str) -> bool:
         return bcrypt.checkpw(raw.encode("utf-8"), hashed.encode("utf-8"))
     except ValueError:
         return False
+    
+
+
+def verify_api_key(raw_key):
+
+    """
+    Verify raw key; return APIToken instance on success, else None.
+    raw_key expected as: prefix_keyid_secret
+    """
+    try:
+        prefix, key_id, secret = raw_key.split(":", 2)
+    except Exception:
+        return None
+
+    try:
+        token_obj = APIToken.objects.filter(key_id=key_id, is_active=True).first()
+        if not token_obj:
+            return None
+        
+        
+        computed_secret = f"{raw_key}:{token_obj.organization.id}"
+        
+        if not check_password(computed_secret, token_obj.token):
+            return None
+
+        if token_obj.expires_at < timezone.now():
+            return None
+        return token_obj
+    
+    except APIToken.DoesNotExist:
+        return None

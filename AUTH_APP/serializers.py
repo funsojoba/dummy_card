@@ -16,9 +16,17 @@ class SignUpSerializer(serializers.Serializer):
     webhook_secret = serializers.CharField(required=False)
     
     
+class LogInSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = "__all__"
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
     
     

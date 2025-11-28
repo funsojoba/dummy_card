@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     
     # internal app
     "AUTH_APP",
+    "CARDHOLDER_APP",
 ]
 
 MIDDLEWARE = [
@@ -73,6 +74,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'CORE.wsgi.application'
+
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]
 
 
 # Database
