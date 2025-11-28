@@ -9,15 +9,14 @@ class CardholderService:
         return cardholder
     
     @classmethod
-    def list_cardholder(cls, organization):
-        return CardHolder.objects.filter(organization=organization)
+    def list_cardholder(cls, request):
+        return CardHolder.objects.for_request(request=request)
     
     
     @classmethod
-    def get_cardholder(cls, organization, id):
-        return CardHolder.objects.filter(
-                        id=id,
-                        organization=organization).first()
+    def get_cardholder(cls, request, id):
+        cardholer_qs = CardHolder.objects.for_request(request=request)
+        return cardholer_qs.filter(id=id).first()
         
     
     
