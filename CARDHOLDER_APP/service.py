@@ -16,7 +16,9 @@ class CardholderService:
     @classmethod
     def get_cardholder(cls, request, id):
         cardholer_qs = CardHolder.objects.for_request(request=request)
-        return cardholer_qs.filter(id=id).first()
+        cardholder = cardholer_qs.filter(id=id).first()
+        
+        return cardholder or None
         
     
     

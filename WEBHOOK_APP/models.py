@@ -1,20 +1,20 @@
 from django.db import models
-from UTILS.db_utils import BaseAbstractModel
+from UTILS.db_utils import BaseAbstractModel, BaseEnvModel, EnvManager
 from enum import Enum
 
 # Create your models here.
 
 
-
-class WebhookEndpoint(BaseAbstractModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+class WebhookEndpoint(BaseAbstractModel, BaseEnvModel):
     url = models.URLField()
     secret = models.CharField(max_length=255)  # For signing
     is_active = models.BooleanField(default=True)
+    
+    objects = EnvManager()
 
 
 
-class WebhookEvent(BaseAbstractModel):
+class WebhookEvent(BaseAbstractModel, BaseEnvModel):
     event_id = models.CharField(max_length=64, unique=True)
     event_type = models.CharField(max_length=255)
     payload = models.JSONField()
@@ -22,14 +22,18 @@ class WebhookEvent(BaseAbstractModel):
     delivered = models.BooleanField(default=False)
     attempts = models.IntegerField(default=0)
     
+    objects = EnvManager()
     
-class WebhookDelivery(BaseAbstractModel):
+    
+class WebhookDelivery(BaseAbstractModel, BaseEnvModel):
     event = models.ForeignKey(WebhookEvent, on_delete=models.CASCADE)
     endpoint = models.ForeignKey(WebhookEndpoint, on_delete=models.CASCADE)
     status_code = models.IntegerField(null=True)
     response_body = models.TextField(null=True)
     delivered_at = models.DateTimeField(auto_now_add=True)
     success = models.BooleanField(default=False)
+    
+    objects = EnvManager()
     
     
     

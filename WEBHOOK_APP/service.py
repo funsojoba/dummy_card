@@ -1,27 +1,32 @@
 from uuid import uuid4
 from django.utils import timezone
-from WEBHOOK_APP.models import WebhookEvent
+from WEBHOOK_APP.models import WebhookEvent, WebhookEndpoint
 from WEBHOOK_APP.task import deliver_webhook
 
 
 
-def create_webhook_event(user, event_type, data):
-    event_id = uuid4().hex
+class WebhookService:
+    
+    def create_org_webhook(request, data):
+        pass
 
-    payload = {
-        "id": event_id,
-        "type": event_type,
-        "version": "2025-01-01",
-        "created_at": timezone.now().isoformat(),
-        "data": data,
-    }
+    def create_webhook_event(request, event_type, data):
+        event_id = uuid4().hex
 
-    event = WebhookEvent.objects.create(
-        event_id=event_id,
-        event_type=event_type,
-        payload=payload
-    )
+        payload = {
+            "id": event_id,
+            "type": event_type,
+            "version": "2025-01-01",
+            "created_at": timezone.now().isoformat(),
+            "data": data,
+        }
 
-    deliver_webhook.delay(event.event_id)
+        event = WebhookEvent.objects.create_from_request(
+            event_id=event_id,
+            event_type=event_type,
+            payload=payload
+        )
 
-    return event
+        deliver_webhook.delay(event.event_id)
+
+        return event

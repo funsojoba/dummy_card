@@ -1,13 +1,21 @@
+import uuid
 
 from django.db import models
 from UTILS.db_utils import BaseAbstractModel
 from UTILS.enums import EnvironmentType
 
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+
+
+def generate_id():
+    return uuid.uuid4().hex
 
 
 
-
-class Organization(BaseAbstractModel):
+class Organization(AbstractBaseUser, PermissionsMixin):
+    id = models.CharField(
+        primary_key=True, editable=False, default=generate_id, max_length=70
+    )
     name = models.CharField(max_length=255, unique=True)
     country = models.CharField(max_length=100)
     industry = models.CharField(max_length=100)
@@ -17,6 +25,10 @@ class Organization(BaseAbstractModel):
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, unique=True)
     password = models.CharField(max_length=128)  # Hashed password
+    
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
+    
     def __str__(self):
         return f"{self.name}"
     
@@ -46,14 +58,3 @@ class APIToken(BaseAbstractModel):
     def __str__(self):
         return f"Token for {self.organization.name} - Active: {self.is_active}"
     
-
-class WebhookSettings(BaseAbstractModel):
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='webhook_secrets')
-    webhook_url = models.URLField()
-    environment = models.CharField(max_length=50, choices=[(tag.value, tag.value) for tag in EnvironmentType])
-    secret = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
-    
-    def __str__(self):
-        return f"Webhook Secret for {self.organization.name} - Active: {self.is_active}"

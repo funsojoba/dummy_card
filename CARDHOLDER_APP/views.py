@@ -32,6 +32,15 @@ class CardholderViewSet(ViewSet):
     
     def retrieve(self, request, pk=None):
         cardholder = CardholderService.get_cardholder(request=request, id=pk)
+        
+        if not cardholder:
+            return Response(
+                errors = {
+                    "message": "cardholder not found"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
         return Response(
             data = CardholderSerializer(cardholder).data,
             status = status.HTTP_201_CREATED

@@ -13,7 +13,10 @@ class APITokenAuthentication(authentication.BaseAuthentication):
         raw_key = request.headers.get("X-API-KEY") or request.META.get("HTTP_X_API_KEY")
         
         if not raw_key:
-            raise AuthenticationFailed("Missing X-API-KEY header")
+            return None
+        
+        # if not raw_key:
+        #     raise AuthenticationFailed("Missing X-API-KEY header")
 
         token_obj = verify_api_key(raw_key)
         if not token_obj:

@@ -1,11 +1,10 @@
 import secrets
-from django.utils import timezone
 from django.db.models import Q
-from AUTH_APP.models import Organization, APIToken, WebhookSettings
+from AUTH_APP.models import Organization, APIToken
 from UTILS.enums import EnvironmentType
 
 from django.contrib.auth.hashers import make_password, check_password
-
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 """
@@ -17,9 +16,6 @@ access to production environment comes upon verification, is_verified=True, is_a
 class AuthService:
     @classmethod
     def sign_up_organization(cls, data: dict):
-        
-        webhook_url = data.get("webhook_url")
-        webhook_secret = data.get("webhook_secret")
         
         password = data.get("password")
         hashed_password = make_password(password)
@@ -41,12 +37,6 @@ class AuthService:
             website=data.get("website")
         )
         
-        if webhook_url and webhook_secret:
-            WebhookSettings.objects.create(
-                webhook_url=webhook_url,
-                secret=webhook_secret,
-                environment=EnvironmentType.SANDBOX.value
-            )
         
         return True, organization
     
@@ -60,42 +50,21 @@ class AuthService:
         if not organization.exists():
             return False, "Invalid credentials"
         
-        org_password = organization.first().password
+        org = organization.first()
+        
+        org_password = org.password
         
         if not check_password(password=password, encoded=org_password):
             return False, "Invalid credentials"
         
-        token_data = {
-            "access": "random shit",
-            "refresh": "another random shit"
+        token = RefreshToken.for_user(org)
+        data = {
+            "token": {
+                "refresh": str(token),
+                "access": str(token.access_token),
+            },
         }
-        return True, token_data
-    
-    
-    @classmethod
-    def generate_api_key(cls, organization, environment):
-        secret = secrets.token_hex(32)
-        key_id = secrets.token_hex(4)
-        
-        environment_prefix_mapper = {
-            "sandbox": "sk_sandbox",
-            "production": "sk_production"
-        }
-        
-        api_key = f"{environment_prefix_mapper[environment]}:{key_id}:{secret}"
-    
-        key_value = f"{api_key}:{organization.id}"
-        
-        hashed_api_key = make_password(key_value)
-        
-        APIToken.objects.create(
-            organization=organization,
-            token=hashed_api_key,
-            environment=environment,
-            key_id=key_id,
-            expires_at=timezone.now() + timezone.timedelta(days=182)
-        )
-        
-        return api_key
+
+        return True, data
     
     

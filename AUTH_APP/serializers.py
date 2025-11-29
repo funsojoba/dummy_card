@@ -12,9 +12,7 @@ class SignUpSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
     website = serializers.CharField()
     password = serializers.CharField(write_only=True)
-    webhook_url= serializers.CharField(required=False)
-    webhook_secret = serializers.CharField(required=False)
-    
+
     
 class LogInSerializer(serializers.Serializer):
     email = serializers.EmailField()
