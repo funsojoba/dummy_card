@@ -3,6 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 from AUTH_APP.models import Organization, APIToken
 from WEBHOOK_APP.models import WebhookEndpoint
+from ORG_APP.models import OrganizationWallet, OrganzationTransaction
 
 from UTILS.encrypt import derive_fernet_key, encrypt_string
 
@@ -69,5 +70,16 @@ class OrganizationService:
             secret=encrypted_secret
         )
         return webhook
+        
+    @classmethod
+    def get_wallet_balance(cls, organization, environment):
+        return OrganizationWallet.objects.filter(organization=organization, environment=environment).first()
+    
+    @classmethod
+    def get_wallet_transaction(cls, organization, environment):
+        return OrganzationTransaction.objects.filter(
+            organization=organization,
+            environment=environment
+        )
         
         

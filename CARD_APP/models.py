@@ -1,23 +1,9 @@
 from django.db import models
-from UTILS.db_utils import BaseAbstractModel
+from UTILS.db_utils import BaseAbstractModel, BaseEnvModel, EnvManager
+from UTILS.enums import TransactionType
 
 
-
-
-"""
-card_id
-card_number
-card_name
-expiry_date
-cvv
-is_active
-is_blocked
-owner (ForeignKey to CardHolder)
-card_number
-
-"""
-
-class Card(BaseAbstractModel):
+class Card(BaseAbstractModel, BaseEnvModel):
     card_id = models.CharField(max_length=50, unique=True)
     card_number = models.CharField(max_length=16, unique=True)
     card_name = models.CharField(max_length=100)
@@ -25,36 +11,41 @@ class Card(BaseAbstractModel):
     cvv = models.CharField(max_length=4)
     is_active = models.BooleanField(default=True)
     is_blocked = models.BooleanField(default=False)
-    owner = models.ForeignKey('CARD_APP.CardHolder', on_delete=models.CASCADE, related_name='cards')
+    owner = models.ForeignKey('CARDHOLDER_APP.CardHolder', on_delete=models.CASCADE, related_name='cards')
+    
+    objects = EnvManager()
     
     def __str__(self):
         return f"{self.card_name} - {self.card_number}"
 
 
 
-class Wallet(BaseAbstractModel):
-    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+class Wallet(BaseAbstractModel, BaseEnvModel):
+    balance = models.IntegerField()
     currency = models.CharField(max_length=10, default='USD')
-    owner = models.OneToOneField('CARD_APP.CardHolder', on_delete=models.CASCADE, related_name='wallet')
+    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="card_wallet")
+    owner = models.OneToOneField('CARDHOLDER_APP.CardHolder', on_delete=models.CASCADE, related_name='wallet')
+    
+    objects = EnvManager()
     
     def __str__(self):
         return f"Wallet of {self.owner.first_name} {self.owner.last_name} - Balance: {self.balance} {self.currency}"
     
     
 
-class Transaction(BaseAbstractModel):
-    TRANSACTION_TYPES = [
-        ('DEPOSIT', 'Deposit'),
-        ('WITHDRAWAL', 'Withdrawal'),
-        ('TRANSFER', 'Transfer'),
-        ('REFUND', 'Refund'),
-    ]
+class Transaction(BaseAbstractModel, BaseEnvModel):
     
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    amount = models.IntegerField()
+    transaction_type = models.CharField(max_length=20, choices=[(tag.value, tag.value) for tag in TransactionType])
     timestamp = models.DateTimeField(auto_now_add=True)
-    wallet = models.ForeignKey('CARD_APP.Wallet', on_delete=models.CASCADE, related_name='transactions')
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
+    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="transaction_card")
     description = models.TextField(blank=True, null=True)
+    reference = models.CharField(max_length=256)
+    old_balance = models.IntegerField()
+    new_balance = models.IntegerField()
+    meta_data = models.JSONField()
     
+    objects = EnvManager()
     def __str__(self):
         return f"{self.transaction_type} of {self.amount} on {self.timestamp}"

@@ -3,7 +3,6 @@ from django.db import models
 # Create your models here.
 from django.db import models
 from UTILS.db_utils import BaseAbstractModel, BaseEnvModel, EnvManager
-from AUTH_APP.models import Organization
 
 
 

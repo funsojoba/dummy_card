@@ -2,10 +2,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ViewSet
 
 from rest_framework.decorators import action
-from UTILS.response import Response
+from UTILS.response import Response, paginate_response
 
 from ORG_APP.service import OrganizationService
-from ORG_APP.serializers import EnvironmentSerializer
+from ORG_APP.serializers import EnvironmentSerializer, OrganizationTransactionSerializer, OrganizationWalletSerializer
 from WEBHOOK_APP.serializer import CreateWebhookEndpointSerializer, WebhookEndpointSerializer
 from AUTH_APP.serializers import OrganizationSerializer
 
@@ -49,6 +49,22 @@ class OrganizationViewSet(ViewSet):
         
         return Response(
             data=WebhookEndpointSerializer(webhook).data
+        )
+    
+    @action(methods=["GET"], detail=False, url_path="wallet-balance")
+    def get_wallet_balance(self, request):
+        environment = request.GET.get("environment", "sandbox")
+        wallet_balance = OrganizationService.get_wallet_balance(organization=request.user, environment=environment)
+        return Response(
+            data=OrganizationWalletSerializer(wallet_balance).data
+        )
+    
+    @action(methods=["GET"], detail=False, url_path="wallet-transactions")
+    def get_wallet_transactions(self, request):
+        environment = request.GET.get("environment", "sandbox")
+        wallet_balance = OrganizationService.get_wallet_transaction(organization=request.user, environment=environment)
+        return paginate_response(
+            wallet_balance, OrganizationTransactionSerializer, request=request
         )
         
         

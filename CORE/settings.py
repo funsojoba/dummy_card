@@ -45,10 +45,11 @@ INSTALLED_APPS = [
     "rest_framework",
     
     # internal app
-    "AUTH_APP",
+    "AUTH_APP.apps.AuthAppConfig",
     "CARDHOLDER_APP",
     "ORG_APP",
-    "WEBHOOK_APP"
+    "WEBHOOK_APP",
+    "CARD_APP"
 ]
 
 MIDDLEWARE = [

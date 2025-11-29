@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from ORG_APP.models import OrganizationWallet, OrganzationTransaction
+
+
+admin.site.register((OrganizationWallet, OrganzationTransaction))
