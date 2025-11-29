@@ -4,7 +4,7 @@ from CARDHOLDER_APP.service import CardholderService
 from CARDHOLDER_APP.serializers import CreateCardholderSerializer, CardholderSerializer
 
 from UTILS.permissions import APITokenAuthentication
-from UTILS.response import Response
+from UTILS.response import Response, paginate_response
 
 
 
@@ -25,11 +25,9 @@ class CardholderViewSet(ViewSet):
         
     def list(self, request):
         cardholders = CardholderService.list_cardholder(request=request)
-        return Response(
-            data = CardholderSerializer(cardholders, many=True).data,
-            status = status.HTTP_201_CREATED
-        )
-    
+        
+        return paginate_response(cardholders, CardholderSerializer, request=request)
+
     def retrieve(self, request, pk=None):
         cardholder = CardholderService.get_cardholder(request=request, id=pk)
         

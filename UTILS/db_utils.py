@@ -26,15 +26,33 @@ class BaseAbstractModel(models.Model):
 
 class EnvManager(models.Manager):
     def for_request(self, request):
-        return self.filter(
-            organization=request.organization,
-            environment=request.environment
-        )
+        org = getattr(request, "organization", None)
+        environment = getattr(request, "environment", None)
+
+        # Fallback for JWT
+        if org is None:
+            org = request.user
+            
+        if environment is None:
+            environment = request.GET.get("environment", "sandbox")
+
+        return self.filter(organization=org, environment=environment)
     
     def create_from_request(self, request, **kwargs):
+        
+        org = getattr(request, "organization", None)
+        environment = getattr(request, "environment", None)
+
+        # Fallback for JWT
+        if org is None:
+            org = request.user
+            
+        if environment is None:
+            environment = request.GET.get("environment", "sandbox")
+        
         return self.create(
-            organization=request.organization,
-            environment=request.environment,
+            organization=org,
+            environment=environment,
             **kwargs
         )
         

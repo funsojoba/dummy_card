@@ -43,4 +43,5 @@ urlpatterns = [
     path("api/v1/", include("AUTH_APP.urls")),
     path("api/v1/", include("CARDHOLDER_APP.urls")),
     path("api/v1/", include("ORG_APP.urls")),
+    path("api/v1/", include("WEBHOOK_APP.urls")),
 ]

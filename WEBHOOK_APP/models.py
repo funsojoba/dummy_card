@@ -61,7 +61,8 @@ class CardEventType(Enum):
 class CardHolderEventType(Enum):
     CARDHOLDER_CREATED_SUCCESS = "cardholder.created.success"
     CARDHOLDER_CREATED_FAILURE = "cardholder.created.failure"
-    
+    CARDHOLDER_VERIFICATION_FAILURE = "cardholder.verification.failure"
+    CARDHOLDER_VERIFICATION_SUCCESS = "cardholder.verification.success"
 
 class WalletEventType(Enum):
     WALLET_FUNDED = "wallet.funded"

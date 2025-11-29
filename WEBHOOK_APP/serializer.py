@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from WEBHOOK_APP.models import WebhookEndpoint
+from WEBHOOK_APP.models import WebhookEndpoint, WebhookEvent, WebhookDelivery
 from UTILS.enums import EnvironmentType
 
 class CreateWebhookEndpointSerializer(serializers.Serializer):
@@ -14,3 +14,21 @@ class WebhookEndpointSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebhookEndpoint
         fields = "__all__"
+        
+        
+class WebhookDeliverySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WebhookDelivery
+        fields = "__all__"
+        
+
+class WebhookEventSerializer(serializers.ModelSerializer):
+    delivery = serializers.SerializerMethodField()
+    
+    def get_delivery(self, obj):
+        deliveries = WebhookDelivery.objects.filter(event=obj)
+        return WebhookDeliverySerializer(deliveries, many=True).data
+    class Meta:
+        model = WebhookEvent
+        fields = "__all__"
+        

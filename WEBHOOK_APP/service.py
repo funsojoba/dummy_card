@@ -6,9 +6,6 @@ from WEBHOOK_APP.task import deliver_webhook
 
 
 class WebhookService:
-    
-    def create_org_webhook(request, data):
-        pass
 
     def create_webhook_event(request, event_type, data):
         event_id = uuid4().hex
@@ -31,3 +28,31 @@ class WebhookService:
         deliver_webhook.delay(event.event_id)
 
         return event
+    
+    @classmethod
+    def list_webhook(cls, request):
+        environment = request.GET.get("environment", "production")
+        webhook_qs = WebhookEvent.objects.for_request(request=request)
+        webhook = webhook_qs.filter(environment=environment)
+        return webhook
+    
+    @classmethod
+    def get_webhook(cls, request, event_id):
+        webhook_qs = WebhookEvent.objects.for_request(request=request)
+        webhook = webhook_qs.filter(id=event_id).first()
+        return webhook
+        
+    
+    @classmethod
+    def repush_webhook(cls, request, event_id: str):
+        event = cls.get_webhook(request, event_id)
+        
+        if not event:
+            return False
+        
+        cls.create_webhook_event(
+            request=request, event_type=event.event_type,
+            data=event.payload.get("data")
+        )
+        return True
+        
