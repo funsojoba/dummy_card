@@ -23,7 +23,7 @@ class WebhookEvent(BaseAbstractModel, BaseEnvModel):
     payload = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     delivered = models.BooleanField(default=False)
-    attempts = models.IntegerField(default=0)
+    attempts = models.IntegerField(default=1)
     
     objects = EnvManager()
     

@@ -50,9 +50,10 @@ class WebhookService:
         if not event:
             return False
         
-        cls.create_webhook_event(
-            request=request, event_type=event.event_type,
-            data=event.payload.get("data")
-        )
+        deliver_webhook.delay(event.event_id)
+        
+        event.attempts += 1
+        event.save()
+        
         return True
         

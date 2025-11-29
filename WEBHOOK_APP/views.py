@@ -17,6 +17,12 @@ class WebhookViewSet(ViewSet):
         webhook_event = WebhookService.list_webhook(request=request)
         return paginate_response(webhook_event, WebhookEventSerializer, request=request)
     
+    def retrieve(self, request, pk=None):
+        webhook_event = WebhookService.get_webhook(request=request, event_id=pk)
+        return Response(
+            data=WebhookEventSerializer(webhook_event).data
+        )
+    
     @action(methods=['POST'], detail=False, url_path="resend-webhook/(?P<event_id>[^/.]+)")
     def resend_webhook(self, request, event_id=None):
         result = WebhookService.repush_webhook(

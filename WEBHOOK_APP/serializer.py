@@ -17,6 +17,12 @@ class WebhookEndpointSerializer(serializers.ModelSerializer):
         
         
 class WebhookDeliverySerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    
+    def get_url(self, obj):
+        endpoint = WebhookEndpointSerializer(obj.endpoint).data
+        
+        return endpoint.get("url")
     class Meta:
         model = WebhookDelivery
         fields = "__all__"
