@@ -21,6 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+#TODO: make this from .env file
 SECRET_KEY = 'django-insecure-8gu&)%s=eb(pif%2&u^e3pmue1m28f*)9jiprieq6=&$b8$gf)'
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -46,7 +47,8 @@ INSTALLED_APPS = [
     # internal app
     "AUTH_APP",
     "CARDHOLDER_APP",
-    "ORG_APP"
+    "ORG_APP",
+    "WEBHOOK_APP"
 ]
 
 MIDDLEWARE = [
@@ -150,7 +152,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }

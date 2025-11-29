@@ -1,6 +1,10 @@
 import secrets
+from django.conf import settings
 from django.utils import timezone
 from AUTH_APP.models import Organization, APIToken
+from WEBHOOK_APP.models import WebhookEndpoint
+
+from UTILS.encrypt import derive_fernet_key, encrypt_string
 
 from django.contrib.auth.hashers import make_password, check_password
 
@@ -48,3 +52,22 @@ class OrganizationService:
     @classmethod
     def get_profile(cls, organization):
         return Organization.objects.filter(id=organization.id).first()
+    
+    @classmethod
+    def setup_webhook(cls, organization, data):
+        master_secret = settings.SECRET_KEY
+        org_id = organization.id
+        
+        fernet_key = derive_fernet_key(org_id, master_secret)
+        
+        encrypted_secret = encrypt_string(fernet_key, data.get("secret"))
+        
+        webhook = WebhookEndpoint.objects.create(
+            environment=data.get("environment"),
+            organization=organization,
+            url=data.get("url"),
+            secret=encrypted_secret
+        )
+        return webhook
+        
+        

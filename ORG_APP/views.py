@@ -6,6 +6,7 @@ from UTILS.response import Response
 
 from ORG_APP.service import OrganizationService
 from ORG_APP.serializers import EnvironmentSerializer
+from WEBHOOK_APP.serializer import CreateWebhookEndpointSerializer, WebhookEndpointSerializer
 from AUTH_APP.serializers import OrganizationSerializer
 
 
@@ -34,4 +35,21 @@ class OrganizationViewSet(ViewSet):
         return Response(
             data={'api_key': api_key}
         )
+        
+    # setup webhook
+    @action(methods=["POST"], detail=False, url_path="webhook-endpoint")
+    def setup_webhook(self,request):
+        serializer = CreateWebhookEndpointSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        webhook = OrganizationService.setup_webhook(
+            organization=request.user,
+            data=serializer.validated_data
+        )
+        
+        return Response(
+            data=WebhookEndpointSerializer(webhook).data
+        )
+        
+        
         

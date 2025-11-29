@@ -1,4 +1,7 @@
 from cryptography.fernet import Fernet
+import base64
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 
 def generate_aes_key() -> str:
@@ -8,6 +11,24 @@ def generate_aes_key() -> str:
     """
     return Fernet.generate_key().decode("utf-8")
 
+
+def derive_fernet_key(org_id: str, master_secret: str) -> str:
+    """
+    Derive a per-organization Fernet key from org_id + master_secret.
+    Returns a URL-safe base64-encoded 32-byte key suitable for Fernet.
+    """
+    # Use HKDF to derive a fixed 32-byte key
+    hkdf = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=None,             # optional: can use per-org salt
+        info=b"webhook-secret",
+    )
+    raw_key = hkdf.derive(f"{org_id}{master_secret}".encode())
+
+    # Fernet requires URL-safe base64-encoded 32-byte key
+    fernet_key = base64.urlsafe_b64encode(raw_key).decode()
+    return fernet_key
 
 def encrypt_string(key: str, raw_text: str) -> str:
     """
