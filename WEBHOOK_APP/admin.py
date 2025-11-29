@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from WEBHOOK_APP.models import WebhookDelivery, WebhookEndpoint, WebhookEvent
+
+
+admin.site.register((
+    WebhookDelivery, WebhookEndpoint, WebhookEvent
+))

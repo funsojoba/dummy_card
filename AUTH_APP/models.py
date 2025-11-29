@@ -1,7 +1,7 @@
 import uuid
 
 from django.db import models
-from UTILS.db_utils import BaseAbstractModel
+from UTILS.db_utils import BaseAbstractModel, OrganizationManager
 from UTILS.enums import EnvironmentType
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -22,12 +22,15 @@ class Organization(AbstractBaseUser, PermissionsMixin):
     website = models.URLField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_verified = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, unique=True)
     password = models.CharField(max_length=128)  # Hashed password
     
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+    
+    objects = OrganizationManager()
     
     def __str__(self):
         return f"{self.name}"

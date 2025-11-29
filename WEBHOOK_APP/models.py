@@ -1,8 +1,7 @@
+from enum import Enum
 from django.db import models
 from UTILS.db_utils import BaseAbstractModel, BaseEnvModel, EnvManager
-from enum import Enum
 
-# Create your models here.
 
 
 class WebhookEndpoint(BaseAbstractModel, BaseEnvModel):
@@ -11,6 +10,10 @@ class WebhookEndpoint(BaseAbstractModel, BaseEnvModel):
     is_active = models.BooleanField(default=True)
     
     objects = EnvManager()
+    
+    def __str__(self):
+        return self.organization.name + " - "+ self.url
+    
 
 
 
@@ -24,6 +27,10 @@ class WebhookEvent(BaseAbstractModel, BaseEnvModel):
     
     objects = EnvManager()
     
+    def __str__(self):
+        return self.organization.name + " - "+ self.event_type
+    
+    
     
 class WebhookDelivery(BaseAbstractModel, BaseEnvModel):
     event = models.ForeignKey(WebhookEvent, on_delete=models.CASCADE)
@@ -35,16 +42,25 @@ class WebhookDelivery(BaseAbstractModel, BaseEnvModel):
     
     objects = EnvManager()
     
+    def __str__(self):
+        status = "SUCCESS" if self.success else "FAILURE"
+        return self.organization.name + " - "+ self.event.event_type + " - " + status
+    
+    
     
     
     
 
 class CardEventType(Enum):
-    CARD_CREATED = "card.created"
+    CARD_CREATED_SUCCESS = "card.created.success"
     CARD_UPDATED = "card.updated"
     CARD_DELETED = "card.deleted"
     CARD_BLOCKED = "card.blocked"
     CARD_UNBLOCKED = "card.unblocked"
+    
+class CardHolderEventType(Enum):
+    CARDHOLDER_CREATED_SUCCESS = "cardholder.created.success"
+    CARDHOLDER_CREATED_FAILURE = "cardholder.created.failure"
     
 
 class WalletEventType(Enum):
