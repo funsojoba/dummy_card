@@ -98,7 +98,11 @@ class OrganizationService:
     
         
     @classmethod
-    def _credit_organization_wallet(cls, organization, environment, amount:int, description:str):
+    def _credit_organization_wallet(cls, request, amount:int, description:str):
+        
+        organization = request.organization
+        environment = request.environment
+        
         old_balance_query = cls.get_wallet_balance(organization=organization, environment=environment)
         old_balance = 0
         
@@ -118,8 +122,17 @@ class OrganizationService:
             description=description, 
             balance_after=new_balance, balance_before=old_balance
         )
-        #TODO: Send webhook
-        
+        # Send webhook
+        WebhookService.create_webhook_event(
+            request=request,
+            event_type=OrganizationWalletEventType.WALLET_CREDITED.value,
+            data={
+                "amount": amount,
+                "description": description,
+                "balance_before": old_balance,
+                "balance_after": new_balance,
+            }
+        )
         
         return True
     

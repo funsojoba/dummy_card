@@ -12,6 +12,7 @@ from WEBHOOK_APP.models import CardEventType, TransactionEventType
 
 
 from django.conf import settings
+from django.utils import timezone
 
 """
 Create card
@@ -210,7 +211,7 @@ class CardService:
             reference = "DBR:"+uuid.uuid1().hex
             
         if not description:
-            description = CardTransactionDescription.CARD_DEBIT.value + f"of {str(amount)} with reference {reference}"
+            description = CardTransactionDescription.CARD_DEBIT.value + f" of {str(amount)} with reference {reference}"
             
         
         wallet = cls.get_card_wallet(request=request, card=card)
@@ -261,27 +262,53 @@ class CardService:
         if org_wallet_balance.balance < amount:
             return False, "Insufficient balance for transaction", 400
         
-        # try:
-        OrganizationService._debit_organization_wallet(
-            request=request, amount=amount, description=f"Card funding for {card_id}"
+        try:
+            OrganizationService._debit_organization_wallet(
+                request=request, amount=amount, description=f"Card funding for {card_id}"
+            )
+            
+            cls._credit_card_wallet(
+                request=request, card=card, 
+                amount=amount, reference=reference, 
+                description=description,
+                meta_data=meta_data
+            )
+            return True, "Card funded successfully", 201
+        except Exception as e:
+            print("ERROR *****",e)
+            return False, "Error funding card", 400
+         
+        
+    
+    @classmethod
+    def unload_Card(cls, request, card_id, amount, reference=None, description=None, meta_data={}):
+        card = cls.get_card(request=request, id=card_id)
+        card_org = card.organization
+        
+        org_wallet_balance = OrganizationService.get_wallet_balance(
+            organization=card_org, environment=card.environment
         )
         
-        cls._credit_card_wallet(
+        card_wallet = cls.get_card_wallet(request=request, card=card)
+        
+        card_balance = card_wallet.balance
+        
+        if card_balance < amount:
+            return False, "Insufficient card balance"
+            
+        cls._debit_card_wallet(
             request=request, card=card, 
             amount=amount, reference=reference, 
             description=description,
             meta_data=meta_data
         )
-        return True, "Card funded successfully", 201
-        # except Exception as e:
-        #     print("ERROR *****",e)
-        #     return False, "Error funding card", 400
-         
         
-    
-    @classmethod
-    def unload_Card(cls, request, card_id, amount):
-        pass
+        
+        OrganizationService._credit_organization_wallet(
+                request=request, amount=amount, 
+                description=f"Card unloading for {card_id}"
+            )
+        return True, "Card unload successful"
     
     @classmethod
     def get_card_balance(cls, request, card_id):
@@ -300,5 +327,10 @@ class CardService:
         return transactions
     
     @classmethod
-    def delete_card(cls, request, card_id):
-        pass
+    def delete_card(cls, request, card_id, deletion_reason=""):
+        card = cls.get_card(request=request, id=card_id)
+        card.is_deleted = True
+        card.deletion_reason = deletion_reason
+        card.deleted_at = timezone.now()
+        card.save()
+        return None
