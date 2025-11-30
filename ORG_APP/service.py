@@ -2,10 +2,12 @@ import secrets
 from django.conf import settings
 from django.utils import timezone
 from AUTH_APP.models import Organization, APIToken
-from WEBHOOK_APP.models import WebhookEndpoint
+from WEBHOOK_APP.models import WebhookEndpoint, OrganizationWalletEventType
+from WEBHOOK_APP.service import WebhookService
 from ORG_APP.models import OrganizationWallet, OrganzationTransaction
 
 from UTILS.encrypt import derive_fernet_key, encrypt_string
+from UTILS.enums import TransactionType
 
 from django.contrib.auth.hashers import make_password, check_password
 
@@ -82,4 +84,80 @@ class OrganizationService:
             environment=environment
         )
         
+    @classmethod
+    def _create_wallet_transaction(cls, organization, environment, amount, transaction_type, description, balance_before, balance_after):
+        return OrganzationTransaction.objects.create(
+            amount=amount,
+            organization=organization,
+            environment=environment,
+            transaction_type=transaction_type,
+            description=description,
+            balance_after=balance_after,
+            balance_before=balance_before
+        )
+    
         
+    @classmethod
+    def _credit_organization_wallet(cls, organization, environment, amount:int, description:str):
+        old_balance_query = cls.get_wallet_balance(organization=organization, environment=environment)
+        old_balance = 0
+        
+        if old_balance_query:
+            old_balance = old_balance_query.balance
+            
+        new_balance = old_balance + amount
+        
+        old_balance_query.balance = new_balance
+        old_balance_query.save()
+        
+        cls._create_wallet_transaction(
+            organization=organization,
+            environment=environment,
+            transaction_type=TransactionType.CREDIT.value,
+            amount=amount,
+            description=description, 
+            balance_after=new_balance, balance_before=old_balance
+        )
+        #TODO: Send webhook
+        
+        
+        return True
+    
+    @classmethod
+    def _debit_organization_wallet(cls, request, amount:int, description:str):
+        
+        organization = request.organization
+        environment = request.environment
+        
+        old_balance_query = cls.get_wallet_balance(organization=organization, environment=environment)
+        old_balance = 0
+        
+        if old_balance_query:
+            old_balance = old_balance_query.balance
+            
+        new_balance = old_balance - amount
+        
+        old_balance_query.balance = new_balance
+        old_balance_query.save()
+        
+        cls._create_wallet_transaction(
+            organization=organization,
+            environment=environment,
+            transaction_type=TransactionType.DEBIT.value,
+            amount=amount,
+            description=description, 
+            balance_after=new_balance, balance_before=old_balance
+        )
+        # Send webhook
+        WebhookService.create_webhook_event(
+            request=request,
+            event_type=OrganizationWalletEventType.WALLET_DEBITED.value,
+            data={
+                "amount": amount,
+                "description": description,
+                "balance_before": old_balance,
+                "balance_after": new_balance,
+            }
+        )
+        
+        return True

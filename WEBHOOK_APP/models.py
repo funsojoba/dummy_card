@@ -53,10 +53,11 @@ class WebhookDelivery(BaseAbstractModel, BaseEnvModel):
 
 class CardEventType(Enum):
     CARD_CREATED_SUCCESS = "card.created.success"
-    CARD_UPDATED = "card.updated"
-    CARD_DELETED = "card.deleted"
-    CARD_BLOCKED = "card.blocked"
-    CARD_UNBLOCKED = "card.unblocked"
+    CARD_CREATED_FAILURE = "card.created.failure"
+    CARD_UPDATED = "card.updated.success"
+    CARD_DELETED = "card.deleted.success"
+    CARD_BLOCKED = "card.blocked.success"
+    CARD_UNBLOCKED = "card.unblocked.success"
     
 class CardHolderEventType(Enum):
     CARDHOLDER_CREATED_SUCCESS = "cardholder.created.success"
@@ -69,6 +70,11 @@ class WalletEventType(Enum):
     WALLET_DEBITED = "wallet.debited"
     WALLET_CREATED = "wallet.created"
     WALLET_CLOSED = "wallet.closed"
+    
+
+class OrganizationWalletEventType(Enum):
+    WALLET_CREDITED = "organization.wallet.credited.successful"
+    WALLET_DEBITED = "organization.wallet.debited.successful"
     
 
 class TransactionEventType(Enum):

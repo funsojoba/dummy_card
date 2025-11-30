@@ -1,16 +1,18 @@
 from django.db import models
 from UTILS.db_utils import BaseAbstractModel, BaseEnvModel, EnvManager
-from UTILS.enums import TransactionType
+from UTILS.enums import TransactionType, CardType, CardTransactionLimit
 
 
 class Card(BaseAbstractModel, BaseEnvModel):
     card_id = models.CharField(max_length=50, unique=True)
-    card_number = models.CharField(max_length=16, unique=True)
-    card_name = models.CharField(max_length=100)
-    expiry_date = models.DateField()
-    cvv = models.CharField(max_length=4)
+    card_number = models.CharField(max_length=255, unique=True)
+    card_name = models.CharField(max_length=255)
+    expiry_date = models.CharField(max_length=255)
+    cvv = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_blocked = models.BooleanField(default=False)
+    card_type = models.CharField(max_length=20, default=CardType.MASTERCARD.value, choices=[(tag.value, tag.value) for tag in CardType])
+    card_transaction_limit = models.IntegerField(choices=[(tag.value, tag.value) for tag in CardTransactionLimit], default=CardTransactionLimit.FIVE_THOUSAND.value)
     owner = models.ForeignKey('CARDHOLDER_APP.CardHolder', on_delete=models.CASCADE, related_name='cards')
     
     objects = EnvManager()

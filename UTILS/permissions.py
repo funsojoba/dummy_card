@@ -2,6 +2,7 @@ from rest_framework import authentication, exceptions
 from UTILS.generate_id import verify_api_key
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.permissions import BasePermission
 
 class APITokenAuthentication(authentication.BaseAuthentication):
     """
@@ -29,4 +30,15 @@ class APITokenAuthentication(authentication.BaseAuthentication):
         request.organization = token_obj.organization
         request.api_token = token_obj
         request.environment = token_obj.environment
-        return (AnonymousUser(), token_obj)  # user is anonymous; use request.organization downstream
+        return (AnonymousUser(), token_obj)  
+    
+    
+
+
+class RequireAPIKey(BasePermission):
+    """
+    Only allow access if the request was authenticated via API key.
+    """
+
+    def has_permission(self, request, view):
+        return hasattr(request, "api_token")

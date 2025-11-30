@@ -48,12 +48,12 @@ def generate_card_number(card_type: str = "visa"):
 
 
 
-def generate_dummy_cvv():
+def generate_cvv():
     return f"{random.randint(100, 999)}"
 
 
 
-def generate_dummy_expiry(months_in_future=24):
+def generate_expiry(months_in_future=24):
     """Generate MM/YY between now and +24 months."""
     future = datetime.now() + timedelta(days=30 * random.randint(6, months_in_future))
     return future.strftime("%m/%y")

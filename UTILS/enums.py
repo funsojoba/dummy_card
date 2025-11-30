@@ -14,3 +14,12 @@ class TransactionType(Enum):
     REFUND = "REFUND"
     REVERSAL = "REVERSAL"
     
+    
+class CardType(Enum):
+    MASTERCARD = "mastercard"
+    VISA = "visa"
+    
+
+class CardTransactionLimit(Enum):
+    FIVE_THOUSAND = 500000
+    TEN_THOUSAND = 1000000

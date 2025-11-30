@@ -3,7 +3,7 @@ from rest_framework.viewsets import ViewSet
 from CARDHOLDER_APP.service import CardholderService
 from CARDHOLDER_APP.serializers import CreateCardholderSerializer, CardholderSerializer
 
-from UTILS.permissions import APITokenAuthentication
+from UTILS.permissions import APITokenAuthentication, RequireAPIKey
 from UTILS.response import Response, paginate_response
 
 
@@ -11,6 +11,7 @@ from UTILS.response import Response, paginate_response
 class CardholderViewSet(ViewSet):
     
     authentication_classes = [APITokenAuthentication]
+    permission_classes = [RequireAPIKey]
     def create(self, request):
         
         serializer = CreateCardholderSerializer(data=request.data)
