@@ -2,7 +2,7 @@ import uuid
 from CARD_APP.models import Card
 from ORG_APP.service import OrganizationService
 from UTILS.card_utils import generate_card_number, generate_cvv, generate_expiry
-from UTILS.encrypt import derive_fernet_key, encrypt_string
+from UTILS.encrypt import derive_fernet_key, encrypt_string, decrypt_string
 from UTILS.free_charges import FeeCharges
 from CARDHOLDER_APP.service import CardholderService
 from WEBHOOK_APP.service import WebhookService
@@ -88,9 +88,8 @@ class CardService:
             OrganizationService._debit_organization_wallet(
                 request=request,
                 amount=FeeCharges.CARD_ISSUING_FEE.value,
-                description="Card issuing fee"
+                description=f"Card issuing fee for {card.card_id}"
             )
-            
             
             return True, card, 201
             
@@ -101,7 +100,68 @@ class CardService:
         
     
     @classmethod
-    def list_cards(cls, request):
-        return Card.objects.for_request(request=request)
+    def list_cards(cls, request, **kwargs):
+        return Card.objects.for_request(request=request, is_active=True, is_deleted=False, **kwargs)
+    
+    @classmethod
+    def get_card(cls, request, id):
+        return Card.objects.for_request(request=request, id=id).first()
         
+    @classmethod
+    def decrypt_card_details(cls, request, id):
         
+        card = cls.get_card(request=request, id=id)
+        
+        if card:
+                
+            master_secret = settings.SECRET_KEY
+            org_id = request.organization.id
+            
+            fernet_key = derive_fernet_key(org_id, master_secret)
+            
+            decrypted_card_number = decrypt_string(fernet_key, card.card_number)
+            decrypted_card_cvv = decrypt_string(fernet_key, card.cvv)
+            decrypted_card_expiry_date = decrypt_string(fernet_key, card.expiry_date)
+            
+            return True, {
+                "id": id,
+                "card_number": decrypted_card_number,
+                "cvv": decrypted_card_cvv,
+                "expiry_date": decrypted_card_expiry_date
+            }
+        return False, "Card not found"
+        
+    
+    
+    @classmethod
+    def get_card_details(cls, request, card_id):
+        pass
+    
+    
+    @classmethod
+    def freeze_card(cls, request, card_id):
+        pass
+    
+    @classmethod
+    def unfreeze_card(cls, request, card_id):
+        pass
+    
+    @classmethod
+    def fund_card(cls, request, card_id, amount):
+        pass
+    
+    @classmethod
+    def unload_Card(cls, request, card_id, amount):
+        pass
+    
+    @classmethod
+    def get_card_balance(cls, request, card_id):
+        pass
+    
+    @classmethod
+    def get_card_transactions(cls, request, card_id):
+        pass
+    
+    @classmethod
+    def delete_card(cls, request, card_id):
+        pass

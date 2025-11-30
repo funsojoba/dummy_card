@@ -10,6 +10,7 @@ class Card(BaseAbstractModel, BaseEnvModel):
     expiry_date = models.CharField(max_length=255)
     cvv = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
     is_blocked = models.BooleanField(default=False)
     card_type = models.CharField(max_length=20, default=CardType.MASTERCARD.value, choices=[(tag.value, tag.value) for tag in CardType])
     card_transaction_limit = models.IntegerField(choices=[(tag.value, tag.value) for tag in CardTransactionLimit], default=CardTransactionLimit.FIVE_THOUSAND.value)

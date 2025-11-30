@@ -1,8 +1,9 @@
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 
 from CARD_APP.service import CardService
-from CARD_APP.serializers import CreateCardSerializer, CardSerializer
+from CARD_APP.serializers import CreateCardSerializer, CardSerializer, DecrypteCardSerializer
 from UTILS.permissions import APITokenAuthentication, RequireAPIKey
 from UTILS.response import Response, paginate_response
 
@@ -30,7 +31,31 @@ class CardViewSet(ViewSet):
         )
         
     def list(self, request):
+        # TODO: filter by deleted, time range, active
         cards = CardService.list_cards(request=request)
         return paginate_response(
             cards, CardSerializer, request=request
+        )
+    
+    def retrieve(self, request, pk=None):
+        card = CardService.get_card(request=request, id=pk)
+        return Response(
+            data=CardSerializer(card).data
+        )
+        
+    @action(methods=["POST"], detail=False, url_path="decrypt-card")
+    def dercypt_card_details(self, request, id=None):
+        serializer = DecrypteCardSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        flag, response = CardService.decrypt_card_details(
+            request=request,
+            id=serializer.validated_data["id"]
+        )
+        if flag:
+            return Response(data=response)
+        return Response(
+            errors={
+                "message": response
+            },
+            status=status.HTTP_400_BAD_REQUEST
         )

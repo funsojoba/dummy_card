@@ -14,6 +14,9 @@ class CreateCardSerializer(serializers.Serializer):
     )
     cardholder_id = serializers.CharField()
     
+    
+class DecrypteCardSerializer(serializers.Serializer):
+    id = serializers.CharField()
 
 class CardSerializer(serializers.ModelSerializer):
     owner = CardholderSerializer()

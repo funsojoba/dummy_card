@@ -25,7 +25,7 @@ class BaseAbstractModel(models.Model):
 
 
 class EnvManager(models.Manager):
-    def for_request(self, request):
+    def for_request(self, request, **kwargs):
         org = getattr(request, "organization", None)
         environment = getattr(request, "environment", None)
 
@@ -36,7 +36,7 @@ class EnvManager(models.Manager):
         if environment is None:
             environment = request.GET.get("environment", "sandbox")
 
-        return self.filter(organization=org, environment=environment)
+        return self.filter(organization=org, environment=environment, **kwargs)
     
     def create_from_request(self, request, **kwargs):
         
