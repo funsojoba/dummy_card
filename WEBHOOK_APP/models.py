@@ -78,10 +78,12 @@ class OrganizationWalletEventType(Enum):
     
 
 class TransactionEventType(Enum):
-    TRANSACTION_INITIATED = "transaction.debit"
-    TRANSACTION_COMPLETED = "transaction.credit"
-    TRANSACTION_FAILED = "transaction.reversed"
-    TRANSACTION_REFUNDED = "transaction.refund"
+    TRANSACTION_DEBIT_SUCCESS = "transaction.debit.success"
+    TRANSACTION_DEBIT_FAILURE = "transaction.debit.failure"
+    TRANSACTION_CREDIT_SUCCESS = "transaction.credit.success"
+    TRANSACTION_CREDIT_FAILURE = "transaction.credit.failure"
+    TRANSACTION_REVERSED_SUCCESS = "transaction.reversed.success"
+    TRANSACTION_REFUND_SUCCESS = "transaction.refund.success"
     
 
 class UserEventType(Enum):

@@ -26,13 +26,12 @@ class Card(BaseAbstractModel, BaseEnvModel):
 class Wallet(BaseAbstractModel, BaseEnvModel):
     balance = models.IntegerField()
     currency = models.CharField(max_length=10, default='USD')
-    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="card_wallet")
-    owner = models.OneToOneField('CARDHOLDER_APP.CardHolder', on_delete=models.CASCADE, related_name='wallet')
+    card = models.OneToOneField(Card, on_delete=models.CASCADE, related_name="card_wallet")
     
     objects = EnvManager()
     
     def __str__(self):
-        return f"Wallet of {self.owner.first_name} {self.owner.last_name} - Balance: {self.balance} {self.currency}"
+        return f"Wallet for {self.card.id} - Balance: {self.balance} {self.currency}"
     
     
 
@@ -47,8 +46,8 @@ class Transaction(BaseAbstractModel, BaseEnvModel):
     reference = models.CharField(max_length=256)
     old_balance = models.IntegerField()
     new_balance = models.IntegerField()
-    meta_data = models.JSONField()
+    meta_data = models.JSONField(null=True, blank=True)
     
     objects = EnvManager()
     def __str__(self):
-        return f"{self.transaction_type} of {self.amount} on {self.timestamp}"
+        return f"{self.transaction_type}w of {self.amount} on {self.timestamp}"

@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 
 from CARD_APP.service import CardService
-from CARD_APP.serializers import CreateCardSerializer, CardSerializer, DecrypteCardSerializer
+from CARD_APP.serializers import CreateCardSerializer, CardSerializer, DecrypteCardSerializer, FundCardSerializer
 from UTILS.permissions import APITokenAuthentication, RequireAPIKey
 from UTILS.response import Response, paginate_response
 
@@ -59,3 +59,32 @@ class CardViewSet(ViewSet):
             },
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+    
+    @action(methods=['POST'], detail=False, url_path="(?P<id>[^/.]+)/fund-card")
+    def fund_card(self, request, id):
+        serializer = FundCardSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        flag, response, status_code = CardService.fund_card(
+            request=request, card_id=id, amount=serializer.validated_data["amount"],
+            reference=serializer.validated_data.get("reference"),
+            description=serializer.validated_data.get("description"),
+            meta_data=serializer.validated_data.get("meta_data")
+        )
+        
+        if flag:
+            return Response(
+                data = {
+                    "message": response
+                },
+                status = status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                errors = {
+                    "message": response
+                },
+                status = status_code
+            )
+    

@@ -24,3 +24,10 @@ class CardSerializer(serializers.ModelSerializer):
         model = Card
         fields = "__all__"
         
+        
+        
+class FundCardSerializer(serializers.Serializer):
+    amount = serializers.IntegerField()
+    reference = serializers.CharField(required=False)
+    description = serializers.CharField(required=False)
+    meta_data = serializers.JSONField(required=False)

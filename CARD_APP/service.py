@@ -1,12 +1,14 @@
 import uuid
-from CARD_APP.models import Card
+from django.conf import settings
+from CARD_APP.models import Card, Wallet, Transaction
 from ORG_APP.service import OrganizationService
 from UTILS.card_utils import generate_card_number, generate_cvv, generate_expiry
 from UTILS.encrypt import derive_fernet_key, encrypt_string, decrypt_string
 from UTILS.free_charges import FeeCharges
+from UTILS.enums import TransactionType, CardTransactionDescription
 from CARDHOLDER_APP.service import CardholderService
 from WEBHOOK_APP.service import WebhookService
-from WEBHOOK_APP.models import CardEventType
+from WEBHOOK_APP.models import CardEventType, TransactionEventType
 
 
 from django.conf import settings
@@ -134,21 +136,151 @@ class CardService:
     
     
     @classmethod
-    def get_card_details(cls, request, card_id):
-        pass
-    
-    
-    @classmethod
     def freeze_card(cls, request, card_id):
-        pass
+        card = cls.get_card(request=request, id=card_id)
+        card.is_active = False
+        card.save()
+        return card
     
     @classmethod
     def unfreeze_card(cls, request, card_id):
-        pass
+        card = cls.get_card(request=request, id=card_id)
+        card.is_active = True
+        card.save()
+        return card
+    
     
     @classmethod
-    def fund_card(cls, request, card_id, amount):
-        pass
+    def get_card_wallet(cls, request, card):
+        wallet = Wallet.objects.for_request(request=request, card=card)
+        return wallet.first()
+        
+    @classmethod
+    def _create_card_transaction(cls, request, card, amount, wallet, transaction_type, description, old_balance, new_balance, reference, meta_data=None):
+        transaction = Transaction.objects.create_from_request(
+            request=request, amount=amount, 
+            transaction_type=transaction_type,
+            wallet=wallet, card=card, description=description,
+            old_balance=old_balance, new_balance=new_balance,
+            reference = reference,
+            meta_data = meta_data
+            )
+    
+    @classmethod
+    def _credit_card_wallet(cls, request, card, amount, reference=None, description="", meta_data={}):
+        wallet = cls.get_card_wallet(request=request, card=card)
+        
+        if not reference:
+            reference = "CDR:"+uuid.uuid1().hex
+        
+        if not description:
+            description = CardTransactionDescription.CARD_CREDIT.value + f" of {str(amount)} with reference {reference}"
+            
+        old_balance = wallet.balance
+        
+        new_balance = old_balance + amount
+        
+        wallet.balance = new_balance
+        wallet.save()
+        
+        cls._create_card_transaction(
+            request=request, card=card, amount=amount,
+            transaction_type=TransactionType.CREDIT.value,
+            description=description, wallet=wallet,
+            old_balance=old_balance, new_balance=new_balance,
+            reference=reference, meta_data=meta_data
+        )
+        
+        WebhookService.create_webhook_event(
+            request=request,
+            event_type=TransactionEventType.TRANSACTION_CREDIT_SUCCESS.value,
+            data={
+                "amount": amount,
+                "reference": reference,
+                "description": description,
+                "meta_data": meta_data,
+                "transaction_type": TransactionType.CREDIT.value,
+                "currency": "USD" #Don't hard code
+            }
+        )
+    
+    @classmethod
+    def _debit_card_wallet(cls, request, card, amount, reference=None, description="", meta_data={}):
+        if not reference:
+            reference = "DBR:"+uuid.uuid1().hex
+            
+        if not description:
+            description = CardTransactionDescription.CARD_DEBIT.value + f"of {str(amount)} with reference {reference}"
+            
+        
+        wallet = cls.get_card_wallet(request=request, card=card)
+        old_balance = wallet.balance
+        
+        new_balance = old_balance - amount
+        
+        wallet.balance = new_balance
+        wallet.save()
+        
+        cls._create_card_transaction(
+            request=request, card=card, amount=amount,
+            transaction_type=TransactionType.DEBIT.value,
+            description=description, wallet=wallet,
+            old_balance=old_balance, new_balance=new_balance,
+            reference=reference, meta_data=meta_data
+        )
+        
+        WebhookService.create_webhook_event(
+            request=request,
+            event_type=TransactionEventType.TRANSACTION_DEBIT_SUCCESS.value,
+            data={
+                "amount": amount,
+                "reference": reference,
+                "description": description,
+                "meta_data": meta_data,
+                "transaction_type": TransactionType.DEBIT.value,
+                "currency": "USD" #Don't hard code
+            }
+        )
+        
+    
+    @classmethod
+    def fund_card(cls, request, card_id, amount, reference=None, description=None, meta_data={}):
+        
+        # TODO: handle idempotency, atomicity
+        
+        card = cls.get_card(request=request, id=card_id)
+        card_org = card.organization
+        
+        org_wallet_balance = OrganizationService.get_wallet_balance(
+            organization=card_org, environment=card.environment
+        )
+        
+        if org_wallet_balance.balance < settings.TRANSACTION_THRESHOLD:
+            return False, "Insufficient balance for transaction", 400
+        
+        if org_wallet_balance.balance < amount:
+            return False, "Insufficient balance for transaction", 400
+        
+        # try:
+        OrganizationService._debit_organization_wallet(
+            request=request, amount=amount, description=f"Card funding for {card_id}"
+        )
+        
+        cls._credit_card_wallet(
+            request=request, card=card, 
+            amount=amount, reference=reference, 
+            description=description,
+            meta_data=meta_data
+        )
+        return True, "Card funded successfully", 201
+        # except Exception as e:
+        #     print("ERROR *****",e)
+        #     return False, "Error funding card", 400
+        
+        
+            
+        
+        
     
     @classmethod
     def unload_Card(cls, request, card_id, amount):

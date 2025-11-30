@@ -23,3 +23,8 @@ class CardType(Enum):
 class CardTransactionLimit(Enum):
     FIVE_THOUSAND = 500000
     TEN_THOUSAND = 1000000
+    
+
+class CardTransactionDescription(Enum):
+    CARD_CREDIT = "Card credit"
+    CARD_DEBIT = "Card debit"
