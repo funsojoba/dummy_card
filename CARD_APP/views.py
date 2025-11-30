@@ -3,7 +3,10 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 
 from CARD_APP.service import CardService
-from CARD_APP.serializers import CreateCardSerializer, CardSerializer, DecrypteCardSerializer, FundCardSerializer
+from CARD_APP.serializers import (
+                CreateCardSerializer, CardSerializer, 
+                DecrypteCardSerializer, FundCardSerializer, 
+                CardWalletSerializer, CardTransactionSerializer)
 from UTILS.permissions import APITokenAuthentication, RequireAPIKey
 from UTILS.response import Response, paginate_response
 
@@ -87,4 +90,24 @@ class CardViewSet(ViewSet):
                 },
                 status = status_code
             )
+    
+    
+    @action(methods=['GET'], detail=False, url_path="(?P<id>[^/.]+)/balance")
+    def get_card_balance(self, request, id):
+        wallet = CardService.get_card_balance(
+            request=request, card_id=id
+        )
+        return Response(
+            data=CardWalletSerializer(wallet).data
+        )
+    
+    @action(methods=['GET'], detail=False, url_path="(?P<id>[^/.]+)/transactions")
+    def get_card_transaction(self, request, id):
+        transaction = CardService.get_card_transactions(
+            request=request, card_id=id
+        )
+        return paginate_response(
+            transaction, CardTransactionSerializer, request=request
+        )
+    
     

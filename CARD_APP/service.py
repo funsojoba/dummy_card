@@ -276,10 +276,7 @@ class CardService:
         # except Exception as e:
         #     print("ERROR *****",e)
         #     return False, "Error funding card", 400
-        
-        
-            
-        
+         
         
     
     @classmethod
@@ -288,11 +285,19 @@ class CardService:
     
     @classmethod
     def get_card_balance(cls, request, card_id):
-        pass
+        card = cls.get_card(request=request, id=card_id)
+        
+        wallet = cls.get_card_wallet(request=request, card=card)
+        
+        return wallet
     
     @classmethod
     def get_card_transactions(cls, request, card_id):
-        pass
+        card = cls.get_card(request=request, id=card_id)
+        transactions = Transaction.objects.for_request(
+            request=request, card=card
+        )
+        return transactions
     
     @classmethod
     def delete_card(cls, request, card_id):
