@@ -79,10 +79,11 @@ class OrganizationService:
     
     @classmethod
     def get_wallet_transaction(cls, organization, environment):
-        return OrganzationTransaction.objects.filter(
+        org_trx = OrganzationTransaction.objects.filter(
             organization=organization,
             environment=environment
         )
+        return org_trx.order_by("-created_at")
         
     @classmethod
     def _create_wallet_transaction(cls, organization, environment, amount, transaction_type, description, balance_before, balance_after):
