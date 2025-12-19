@@ -1,6 +1,9 @@
 import secrets
+from datetime import datetime
+from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password, check_password
 from AUTH_APP.models import Organization, APIToken
 from WEBHOOK_APP.models import WebhookEndpoint, OrganizationWalletEventType
 from WEBHOOK_APP.service import WebhookService
@@ -9,7 +12,11 @@ from ORG_APP.models import OrganizationWallet, OrganzationTransaction
 from UTILS.encrypt import derive_fernet_key, encrypt_string
 from UTILS.enums import TransactionType
 
-from django.contrib.auth.hashers import make_password, check_password
+
+
+from CARD_APP.models import Card, Transaction
+from CARDHOLDER_APP.models import CardHolder
+
 
 
 # Set up webhook, URL and Key
@@ -175,3 +182,91 @@ class OrganizationService:
         )
         
         return True
+    
+    @classmethod
+    def organization_statistics(cls, organization, month=None, year=None, environment="sandbox"):
+        
+        
+        """_summary_
+
+        Statistics such as total cards issued, total active cards, total wallet balance, total transactions etc
+        Total Transaction volume over time
+        Total Transaction volumne for the month, quarter, year
+        Average transaction value
+        
+        Total active cards over time
+        Total cards issued over time
+        Total cards issued in a month, quarter, year
+        
+        
+        Revenue generated over time
+        Revenue generated in a month, quarter, year
+        
+        Expenses over time
+        Expenses in a month, quarter, year
+        """
+        
+        all_cards = Card.objects.filter(organization=organization, environment=environment)
+        
+        
+        now = datetime.now()
+        if not year: year = now.year
+        
+        if month and year:
+            all_cards = all_cards.filter(
+                created_at__month=month,
+                created_at__year=year
+            )
+        elif year:
+            all_cards = all_cards.filter(
+                created_at__year=year
+            )
+        
+        total_cards_issued = all_cards.count()
+        total_active_cards = all_cards.filter(is_active=True).count()
+        wallet = cls.get_wallet_balance(organization=organization, environment=environment)
+        total_wallet_balance = wallet.balance if wallet else 0
+        
+        all_transactions = Transaction.objects.filter(organization=organization, environment=environment)
+        
+        if month and year:
+            all_transactions = all_transactions.filter(
+                created_at__month=month,
+                created_at__year=year
+            )
+        elif year:
+            all_transactions = all_transactions.filter(
+                created_at__year=year
+            )
+        
+        total_transaction_count = all_transactions.count()
+        total_transaction_volume = all_transactions.aggregate(total_volume=models.Sum('amount'))['total_volume'] or 0
+        average_transaction_value = all_transactions.aggregate(avg_value=models.Avg('amount'))['avg_value'] or 0
+        
+        statistics = {
+            "total_cards_issued": total_cards_issued,
+            "total_active_cards": total_active_cards,
+            "total_wallet_balance": total_wallet_balance,
+            "total_transaction_count": total_transaction_count,
+            "total_transaction_volume": total_transaction_volume,
+            "average_transaction_value": average_transaction_value,
+        }
+        return statistics
+    
+    @classmethod
+    def generate_monthly_invoice(cls, organization, month, year, environment="sandbox"):
+        # Placeholder for future implementation
+        """_summary_
+        
+        Charge the organization a monthly invoice based on their usage
+        100 cent per card issued
+        50 cent per transaction
+        100 cent maintenance fee per card
+
+        Args:
+            organization (_type_): _description_
+            month (_type_): _description_
+            year (_type_): _description_
+            environment (str, optional): _description_. Defaults to "sandbox".
+        """
+        pass

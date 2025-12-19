@@ -68,4 +68,19 @@ class OrganizationViewSet(ViewSet):
         )
         
         
+    @action(methods=["GET"], detail=False, url_path="statistics")
+    def organization_statistics(self, request):
+        environment = request.GET.get("environment", "sandbox")
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        stats = OrganizationService.organization_statistics(
+            organization=request.user,
+            environment=environment,
+            month=month,
+            year=year
+        )
+        return Response(
+            data=stats
+        )
+        
         
