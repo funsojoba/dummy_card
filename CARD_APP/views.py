@@ -138,4 +138,59 @@ class CardViewSet(ViewSet):
             transaction, CardTransactionSerializer, request=request
         )
     
+    @action(methods=['POST'], detail=False, url_path="(?P<id>[^/.]+)/freeze")
+    def freeze_card(self, request, id):
+        flag, response = CardService.freeze_card(
+            request=request, card_id=id
+        )
+        if flag:
+            return Response(
+                data={
+                    "message": response
+                },
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            errors={
+                "message": response
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    @action(methods=['POST'], detail=False, url_path="(?P<id>[^/.]+)/unfreeze")
+    def unfreeze_card(self, request, id):
+        flag, response = CardService.unfreeze_card(
+            request=request, card_id=id
+        )
+        if flag:
+            return Response(
+                data=CardSerializer(response).data,
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            errors={
+                "message": response
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    
+    def destroy(self, request, pk=None):
+        response = CardService.delete_card(
+            request=request, card_id=pk
+        )
+        if response is None:
+            return Response(
+                data={
+                    "message": "Card deleted successfully"
+                },
+                status=status.HTTP_204_NO_CONTENT
+            )
+        return Response(
+            errors={
+                "message": response
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
     

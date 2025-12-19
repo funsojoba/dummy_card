@@ -138,17 +138,32 @@ class CardService:
     
     @classmethod
     def freeze_card(cls, request, card_id):
-        card = cls.get_card(request=request, id=card_id)
-        card.is_active = False
-        card.save()
-        return card
+        try:
+            card = cls.get_card(request=request, id=card_id)
+            if card.is_active == False:
+                return True, "Card is already frozen"
+
+            card.is_active = False
+            card.save()
+            return True, "Card frozen successfully"
+        except Exception as e:
+            print("ERROR freezing card: ", e)
+            return False, "Error freezing card"
     
     @classmethod
     def unfreeze_card(cls, request, card_id):
-        card = cls.get_card(request=request, id=card_id)
-        card.is_active = True
-        card.save()
-        return card
+        try:
+            card = cls.get_card(request=request, id=card_id)
+            
+            if card.is_active == True:
+                return False, "Card is already unfrozen"
+            
+            card.is_active = True
+            card.save()
+            return True, card
+        except Exception as e:
+            print("ERROR unfreezing card: ", e)
+            return False, "Error unfreezing card"
     
     
     @classmethod
@@ -328,9 +343,33 @@ class CardService:
     
     @classmethod
     def delete_card(cls, request, card_id, deletion_reason=""):
-        card = cls.get_card(request=request, id=card_id)
-        card.is_deleted = True
-        card.deletion_reason = deletion_reason
-        card.deleted_at = timezone.now()
-        card.save()
-        return None
+        try:
+            card = cls.get_card(request=request, id=card_id)
+            
+            card_balance = cls.get_card_wallet(request=request, card=card).balance
+            
+            if card_balance > 0:
+                # unload card balance and credit to org wallet
+                cls.unload_Card(
+                    request=request, card_id=card_id, amount=card_balance,
+                    description="Unloading card balance before deletion"
+                )
+                
+                # credit org wallet
+                OrganizationService._credit_organization_wallet(
+                    request=request, amount=card_balance,
+                    description=f"Card balance credit before deletion for card {card_id}"
+                )
+                
+            
+            if card.is_deleted:
+                return "Card is already deleted"
+            
+            card.is_deleted = True
+            card.deletion_reason = deletion_reason
+            card.deleted_at = timezone.now()
+            card.save()
+            return None
+        except Exception as e:
+            print("ERROR deleting card: ", e)
+            return "Error deleting card"
