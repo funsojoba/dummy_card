@@ -269,4 +269,15 @@ class OrganizationService:
             year (_type_): _description_
             environment (str, optional): _description_. Defaults to "sandbox".
         """
+        org_statistics = cls.organization_statistics(
+            organization=organization,
+            month=month,
+            year=year,
+            environment=environment
+        )
+        
+        # WIP
+        # write data into PDF invoice
+        # Send invoice to organization email
+        # Log invoice in the system
         pass
